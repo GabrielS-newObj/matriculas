@@ -1,0 +1,121 @@
+{
+  "usuarios": [
+    {
+      "id": 1,
+      "nome": "Ana Gestora",
+      "email": "gestor@uni.br",
+      "senha": "123",
+      "perfil": "gestor"
+    },
+    {
+      "id": 2,
+      "nome": "Bruno Aluno",
+      "email": "bruno@uni.br",
+      "senha": "123",
+      "perfil": "aluno",
+      "alunoId": 1
+    },
+    {
+      "id": 3,
+      "nome": "Carla Aluna",
+      "email": "carla@uni.br",
+      "senha": "123",
+      "perfil": "aluno",
+      "alunoId": 2
+    },
+    {
+      "id": 4,
+      "nome": "Diego Aluno",
+      "email": "diego@uni.br",
+      "senha": "123",
+      "perfil": "aluno",
+      "alunoId": 3
+    }
+  ],
+  "alunos": [
+    {
+      "id": 1,
+      "nome": "Bruno Aluno",
+      "matricula": "2026001",
+      "disciplinasConcluidas": [
+        1
+      ]
+    },
+    {
+      "id": 2,
+      "nome": "Carla Aluna",
+      "matricula": "2026002",
+      "disciplinasConcluidas": [
+        1,
+        2
+      ]
+    },
+    {
+      "id": 3,
+      "nome": "Diego Aluno",
+      "matricula": "2026003",
+      "disciplinasConcluidas": [
+        1,
+        2
+      ]
+    }
+  ],
+  "disciplinas": [
+    {
+      "id": 2,
+      "nome": "Programação Web",
+      "codigo": "ADS-201",
+      "creditos": 4,
+      "preRequisitos": []
+    },
+    {
+      "nome": "Banco de dados",
+      "codigo": "ADS-201",
+      "creditos": 2,
+      "preRequisitos": [
+        2
+      ],
+      "id": 4
+    }
+  ],
+  "professores": [
+    {
+      "id": 1,
+      "nome": "Prof. Carlos",
+      "limiteTurmas": 4
+    },
+    {
+      "id": 2,
+      "nome": "Profa. Marina",
+      "limiteTurmas": 4
+    }
+  ],
+  "turmas": [
+    {
+      "id": 1,
+      "disciplinaId": 2,
+      "professorId": 1,
+      "horario": "21",
+      "vagas": 30
+    },
+    {
+      "disciplinaId": 4,
+      "professorId": 2,
+      "horario": "21",
+      "vagas": 30,
+      "id": 3
+    }
+  ],
+  "matriculas": [
+    {
+      "alunoId": 1,
+      "turmaId": 3,
+      "id": 1
+    },
+    {
+      "alunoId": 1,
+      "turmaId": 1,
+      "id": 2
+    }
+  ]
+}
