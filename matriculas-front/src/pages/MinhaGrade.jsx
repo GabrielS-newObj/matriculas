@@ -51,7 +51,8 @@ export default class MinhaGrade extends React.Component {
           texto: disciplina ? disciplina.nome : "Disciplina",
         };
       })
-      .filter(Boolean);
+      .filter(Boolean)
+      .sort((a, b) => Number(a.horario) - Number(b.horario));
   }
  
   
