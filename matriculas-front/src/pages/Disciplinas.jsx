@@ -14,7 +14,7 @@ export default class Disciplinas extends React.Component {
   carregar = () =>
     api
       .listar("disciplinas")
-      .then((disciplinas) => this.setState({ disciplinas }))
+      .then((disciplinas) => this.setState({ disciplinas: disciplinas.sort((a, b) => a.codigo.localeCompare(b.codigo)) }))
       .catch((e) => this.setState({ mensagem: { tipo: "danger", texto: e.message } }));
 
   mudar = (e) => this.setState({ form: { ...this.state.form, [e.target.name]: e.target.value } });

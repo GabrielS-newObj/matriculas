@@ -20,7 +20,7 @@ export default class NovaTurma extends React.Component {
         api.listar("professores"),
         api.listar("turmas"),
       ]);
-      this.setState({ disciplinas, professores, turmas });
+      this.setState({ disciplinas: disciplinas.sort((a, b) => a.codigo.localeCompare(b.codigo)), professores, turmas });
     } catch (e) {
       this.setState({ mensagem: { tipo: "danger", texto: e.message } });
     }
