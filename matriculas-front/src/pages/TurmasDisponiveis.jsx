@@ -92,7 +92,9 @@ export default class TurmasDisponiveis extends React.Component {
     const { turmas, disciplinas, minhasMatriculas, todasMatriculas, carregando, mensagem } = this.state;
     if (carregando) return <div className="spinner-border" role="status" />;
 
-    const turmasValidas = turmas.filter((t) => disciplinas.some((d) => d.id === t.disciplinaId));
+    const turmasValidas = turmas
+      .filter((t) => disciplinas.some((d) => d.id === t.disciplinaId))
+      .sort((a, b) => Number(a.horario) - Number(b.horario));
 
     return (
       <div>
