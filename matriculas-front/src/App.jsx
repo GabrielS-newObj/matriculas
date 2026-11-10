@@ -17,9 +17,14 @@ const PAGINAS = {
   "gestor-disciplinas": { componente: Disciplinas, perfil: "gestor" },
 };
  
+function paginaInicial(usuario) {
+  if (!usuario) return "login";
+  return usuario.perfil === "gestor" ? "gestor-grade" : "aluno-turmas";
+}
+
 export default class App extends React.Component {
   static contextType = AuthContext;
-  state = { pagina: "login" };
+  state = { pagina: paginaInicial(JSON.parse(localStorage.getItem("usuario"))) };
  
   navegar = (pagina) => this.setState({ pagina });
  
