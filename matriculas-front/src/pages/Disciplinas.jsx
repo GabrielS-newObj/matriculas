@@ -30,6 +30,8 @@ export default class Disciplinas extends React.Component {
     const { form } = this.state;
     if (!form.nome.trim() || !form.codigo.trim())
       return this.setState({ mensagem: { tipo: "warning", texto: "Preencha nome e código." } });
+    if (this.state.disciplinas.some((d) => d.codigo === form.codigo.trim()))
+      return this.setState({ mensagem: { tipo: "warning", texto: "Já existe uma disciplina com esse código." } });
     try {
       await api.criar("disciplinas", { ...form, creditos: Number(form.creditos) });
       this.setState({ form: FORM_VAZIO, mensagem: { tipo: "success", texto: "Disciplina cadastrada!" } });
