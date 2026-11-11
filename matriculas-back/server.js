@@ -32,8 +32,32 @@ function lerCorpo(req) {
   });
 }
  
-function validarServidor(recurso, novo, db) {
+const normalizar = (texto) =>
+  String(texto || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+ 
+function proximoCodigo(db) {
+  const maior = db.disciplinas.reduce((m, d) => {
+    const achado = /^DISC-(\d+)$/.exec(String(d.codigo));
+    return achado ? Math.max(m, Number(achado[1])) : m;
+  }, 0);
+  return "DISC-" + String(maior + 1).padStart(3, "0");
+}
+ 
+function validarServidor(recurso, novo, db, idAtual = null) {
+  if (recurso === "disciplinas") {
+    const nome = normalizar(novo.nome);
+    if (!nome) return "Preencha o nome da disciplina.";
+    const repetida = db.disciplinas.some((d) => d.id !== idAtual && normalizar(d.nome) === nome);
+    if (repetida) return "Já existe uma disciplina com este nome.";
+  }
   if (recurso === "turmas") {
+    if (!Number.isInteger(novo.vagas) || novo.vagas < 1)
+      return "Vagas deve ser um número inteiro maior ou igual a 1.";
     const prof = db.professores.find((p) => p.id === novo.professorId);
     if (!prof) return "Professor não encontrado.";
     const turmasProf = db.turmas.filter((t) => t.professorId === prof.id);
@@ -100,6 +124,10 @@ const server = http.createServer(async (req, res) => {
         const novo = await lerCorpo(req);
         const erro = validarServidor(recurso, novo, db);
         if (erro) return responder(res, 400, { mensagem: erro });
+        if (recurso === "disciplinas") {
+          novo.nome = String(novo.nome).trim();
+          novo.codigo = proximoCodigo(db);
+        }
         novo.id = Math.max(0, ...lista.map((i) => i.id)) + 1;
         lista.push(novo);
         gravar(db);
@@ -109,7 +137,13 @@ const server = http.createServer(async (req, res) => {
       if (req.method === "PUT" && id !== null) {
         const pos = lista.findIndex((i) => i.id === id);
         if (pos < 0) return responder(res, 404, { mensagem: "Não encontrado." });
-        lista[pos] = { ...lista[pos], ...(await lerCorpo(req)), id };
+        const atualizado = { ...lista[pos], ...(await lerCorpo(req)), id };
+        if (recurso === "disciplinas") {
+          atualizado.codigo = lista[pos].codigo;
+          const erro = validarServidor(recurso, atualizado, db, id);
+          if (erro) return responder(res, 400, { mensagem: erro });
+        }
+        lista[pos] = atualizado;
         gravar(db);
         return responder(res, 200, lista[pos]);
       }
@@ -125,6 +159,11 @@ const server = http.createServer(async (req, res) => {
           db.disciplinas.forEach((d) => {
           d.preRequisitos = d.preRequisitos.filter((p) => p !== id);
         });
+          // Sem isso, o id removido ficaria "concluído" nos alunos e, se um novo id igual
+          // fosse criado, o aluno passaria por pré-requisitos que nunca cumpriu.
+          db.alunos.forEach((a) => {
+            a.disciplinasConcluidas = a.disciplinasConcluidas.filter((c) => c !== id);
+          });
         }
         gravar(db);
         return responder(res, 200, { mensagem: "Removido." });
