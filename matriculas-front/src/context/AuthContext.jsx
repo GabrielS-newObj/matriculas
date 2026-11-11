@@ -5,7 +5,7 @@ export const AuthContext = React.createContext({
   login: () => {},
   logout: () => {},
 });
- 
+
 export class AuthProvider extends React.Component {
   state = { usuario: lerUsuario() };
  

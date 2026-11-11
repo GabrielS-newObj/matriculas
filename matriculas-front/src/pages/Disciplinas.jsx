@@ -19,21 +19,21 @@ export default class Disciplinas extends React.Component {
   componentDidMount() {
     this.carregar();
   }
- 
+
   carregar = () =>
     api
       .listar("disciplinas")
-      .then((disciplinas) => this.setState({ disciplinas }))
+      .then((disciplinas) => this.setState({ disciplinas: disciplinas.sort((a, b) => a.codigo.localeCompare(b.codigo)) }))
       .catch((e) => this.setState({ mensagem: { tipo: "danger", texto: e.message } }));
- 
+
   mudar = (e) => this.setState({ form: { ...this.state.form, [e.target.name]: e.target.value } });
- 
+
   alternarPreRequisito = (id) => {
     const atuais = this.state.form.preRequisitos;
     const novos = atuais.includes(id) ? atuais.filter((x) => x !== id) : [...atuais, id];
     this.setState({ form: { ...this.state.form, preRequisitos: novos } });
   };
- 
+
   salvar = async (e) => {
     e.preventDefault();
     const { form, disciplinas } = this.state;
@@ -97,7 +97,7 @@ export default class Disciplinas extends React.Component {
       this.setState({ mensagem: { tipo: "danger", texto: err.message } });
     }
   };
- 
+
   render() {
     const { disciplinas, form, mensagem, confirmacao } = this.state;
     return (
@@ -106,9 +106,14 @@ export default class Disciplinas extends React.Component {
           <h2>Nova disciplina</h2>
           <Alerta mensagem={mensagem} />
           <form onSubmit={this.salvar}>
-            <input className="form-control mb-2" name="nome" placeholder="Nome" value={form.nome} onChange={this.mudar} />
-            <label className="form-label" htmlFor="creditos">Créditos</label>
-            <input className="form-control mb-3" id="creditos" name="creditos" type="number" value={form.creditos} onChange={this.mudar} />
+            <div className="mb-2">
+              <label className="form-label">Nome</label>
+              <input className="form-control" name="nome" value={form.nome} onChange={this.mudar} />
+            </div>
+            <div className="mb-3">
+              <label className="form-label">Créditos</label>
+              <input className="form-control" id="creditos" name="creditos" type="number" value={form.creditos} onChange={this.mudar} />
+            </div>
             <p className="mb-1">Pré-requisitos:</p>
             {disciplinas.map((d) => (
               <div className="form-check" key={d.id}>
@@ -124,7 +129,7 @@ export default class Disciplinas extends React.Component {
             <button className="btn btn-primary mt-3">Salvar disciplina</button>
           </form>
         </div>
- 
+
         <div className="col-md-7">
           <h2>Disciplinas</h2>
           <table className="table">

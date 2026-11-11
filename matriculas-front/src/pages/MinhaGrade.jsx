@@ -13,7 +13,7 @@ export default class MinhaGrade extends React.Component {
   componentDidMount() {
     this.carregar();
   }
- 
+
   carregar = async () => {
     try {
       const alunoId = this.context.usuario.alunoId;
@@ -55,8 +55,7 @@ export default class MinhaGrade extends React.Component {
       this.setState({ mensagem: { tipo: "danger", texto: e.message } });
     }
   };
- 
-  
+
   itens() {
     const { matriculas, turmas, disciplinas, professores } = this.state;
     return matriculas
@@ -75,12 +74,12 @@ export default class MinhaGrade extends React.Component {
           texto: nomeDisciplina + " - " + nomeProfessor,
         };
       })
-      .filter(Boolean);
+      .filter(Boolean)
+      .sort((a, b) => Number(a.horario) - Number(b.horario));
   }
- 
-  
+
   medir = (id, fase, duracao) => console.log(id, fase, duracao.toFixed(1) + " ms");
- 
+
   render() {
     if (this.state.carregando) return <div className="spinner-border" role="status" />;
     const itens = this.itens();
@@ -92,7 +91,7 @@ export default class MinhaGrade extends React.Component {
         <Profiler id="GradeSemanal" onRender={this.medir}>
           <GradeSemanal itens={itens} />
         </Profiler>
- 
+
         <h5 className="mt-4">Minhas matrículas</h5>
         {itens.length === 0 && <p className="text-muted">Você ainda não tem matrículas.</p>}
         <ul className="list-group">
