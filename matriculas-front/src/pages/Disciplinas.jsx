@@ -1,11 +1,20 @@
 import React from "react";
 import { api } from "../services/api";
 import Alerta from "../components/Alerta";
+import ModalConfirmacao from "../components/ModalConfirmacao";
  
-const FORM_VAZIO = { nome: "", codigo: "", creditos: 4, preRequisitos: [] };
+const normalizar = (texto) =>
+  texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+ 
+const FORM_VAZIO = { nome: "", creditos: 4, preRequisitos: [] };
  
 export default class Disciplinas extends React.Component {
-  state = { disciplinas: [], form: FORM_VAZIO, mensagem: null };
+  state = { disciplinas: [], form: FORM_VAZIO, mensagem: null, confirmacao: null };
  
   componentDidMount() {
     this.carregar();
@@ -27,11 +36,16 @@ export default class Disciplinas extends React.Component {
  
   salvar = async (e) => {
     e.preventDefault();
-    const { form } = this.state;
-    if (!form.nome.trim() || !form.codigo.trim())
-      return this.setState({ mensagem: { tipo: "warning", texto: "Preencha nome e código." } });
+    const { form, disciplinas } = this.state;
+    const nome = form.nome.trim();
+    if (!nome)
+      return this.setState({ mensagem: { tipo: "warning", texto: "Preencha o nome da disciplina." } });
+    if (disciplinas.some((d) => normalizar(d.nome) === normalizar(nome)))
+      return this.setState({
+        mensagem: { tipo: "warning", texto: 'Já existe uma disciplina chamada "' + nome + '".' },
+      });
     try {
-      await api.criar("disciplinas", { ...form, creditos: Number(form.creditos) });
+      await api.criar("disciplinas", { ...form, nome, creditos: Number(form.creditos) });
       this.setState({ form: FORM_VAZIO, mensagem: { tipo: "success", texto: "Disciplina cadastrada!" } });
       this.carregar();
     } catch (err) {
@@ -39,9 +53,45 @@ export default class Disciplinas extends React.Component {
     }
   };
  
-  remover = async (id) => {
+  pedirRemocao = async (disciplina) => {
     try {
-      await api.remover("disciplinas", id);
+      const [turmas, matriculas] = await Promise.all([
+        api.listar("turmas"),
+        api.listar("matriculas"),
+      ]);
+      const idsTurmas = turmas.filter((t) => t.disciplinaId === disciplina.id).map((t) => t.id);
+      const qtdMatriculas = matriculas.filter((m) => idsTurmas.includes(m.turmaId)).length;
+      const dependentes = this.state.disciplinas.filter((d) =>
+        d.preRequisitos.includes(disciplina.id)
+      ).length;
+
+      const itens = [
+        idsTurmas.length + " turma(s) ofertada(s)",
+        qtdMatriculas + " matrícula(s) de alunos nessas turmas",
+      ];
+      if (dependentes > 0) itens.push("o pré-requisito de " + dependentes + " outra(s) disciplina(s)");
+
+      this.setState({
+        confirmacao: {
+          titulo: 'Remover a disciplina "' + disciplina.nome + '"?',
+          linhas: ["Isso também vai apagar:"],
+          itens,
+          aviso: "Esta ação não pode ser desfeita.",
+          textoConfirmar: "Sim, remover disciplina",
+          disciplina,
+        },
+      });
+    } catch (err) {
+      this.setState({ mensagem: { tipo: "danger", texto: err.message } });
+    }
+  };
+
+  remover = async () => {
+    const { disciplina } = this.state.confirmacao;
+    this.setState({ confirmacao: null });
+    try {
+      await api.remover("disciplinas", disciplina.id);
+      this.setState({ mensagem: { tipo: "success", texto: "Disciplina removida." } });
       this.carregar();
     } catch (err) {
       this.setState({ mensagem: { tipo: "danger", texto: err.message } });
@@ -49,7 +99,7 @@ export default class Disciplinas extends React.Component {
   };
  
   render() {
-    const { disciplinas, form, mensagem } = this.state;
+    const { disciplinas, form, mensagem, confirmacao } = this.state;
     return (
       <div className="row">
         <div className="col-md-5">
@@ -57,8 +107,8 @@ export default class Disciplinas extends React.Component {
           <Alerta mensagem={mensagem} />
           <form onSubmit={this.salvar}>
             <input className="form-control mb-2" name="nome" placeholder="Nome" value={form.nome} onChange={this.mudar} />
-            <input className="form-control mb-2" name="codigo" placeholder="Código" value={form.codigo} onChange={this.mudar} />
-            <input className="form-control mb-3" name="creditos" type="number" value={form.creditos} onChange={this.mudar} />
+            <label className="form-label" htmlFor="creditos">Créditos</label>
+            <input className="form-control mb-3" id="creditos" name="creditos" type="number" value={form.creditos} onChange={this.mudar} />
             <p className="mb-1">Pré-requisitos:</p>
             {disciplinas.map((d) => (
               <div className="form-check" key={d.id}>
@@ -92,7 +142,7 @@ export default class Disciplinas extends React.Component {
                       : d.preRequisitos.map((id) => disciplinas.find((x) => x.id === id)?.nome).join(", ")}
                   </td>
                   <td>
-                    <button className="btn btn-outline-danger btn-sm" onClick={() => this.remover(d.id)}>
+                    <button className="btn btn-outline-danger btn-sm" onClick={() => this.pedirRemocao(d)}>
                       Remover
                     </button>
                   </td>
@@ -101,6 +151,13 @@ export default class Disciplinas extends React.Component {
             </tbody>
           </table>
         </div>
+        {confirmacao && (
+          <ModalConfirmacao
+            {...confirmacao}
+            onConfirmar={this.remover}
+            onCancelar={() => this.setState({ confirmacao: null })}
+          />
+        )}
       </div>
     );
   }
