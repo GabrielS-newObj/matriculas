@@ -106,9 +106,14 @@ export default class Disciplinas extends React.Component {
           <h2>Nova disciplina</h2>
           <Alerta mensagem={mensagem} />
           <form onSubmit={this.salvar}>
-            <input className="form-control mb-2" name="nome" placeholder="Nome" value={form.nome} onChange={this.mudar} />
-            <label className="form-label" htmlFor="creditos">Créditos</label>
-            <input className="form-control mb-3" id="creditos" name="creditos" type="number" value={form.creditos} onChange={this.mudar} />
+            <div className="mb-2">
+              <label className="form-label">Nome</label>
+              <input className="form-control" name="nome" value={form.nome} onChange={this.mudar} />
+            </div>
+            <div className="mb-3">
+              <label className="form-label">Créditos</label>
+              <input className="form-control" id="creditos" name="creditos" type="number" value={form.creditos} onChange={this.mudar} />
+            </div>
             <p className="mb-1">Pré-requisitos:</p>
             {disciplinas.map((d) => (
               <div className="form-check" key={d.id}>

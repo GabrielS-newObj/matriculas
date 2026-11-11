@@ -83,7 +83,7 @@ export default class GradeOfertas extends React.Component {
               <tr><th>Disciplina</th><th>Professor</th><th>Horário</th><th>Vagas</th><th></th></tr>
             </thead>
             <tbody>
-              {turmas.map((t) => {
+              {[...turmas].sort((a, b) => Number(a.horario) - Number(b.horario)).map((t) => {
                 const disciplina = disciplinas.find((d) => d.id === t.disciplinaId);
                 const professor = professores.find((p) => p.id === t.professorId);
                 const nomeDisciplina = disciplina ? disciplina.nome : "?";
