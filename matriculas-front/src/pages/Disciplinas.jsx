@@ -1,12 +1,21 @@
 import React from "react";
 import { api } from "../services/api";
 import Alerta from "../components/Alerta";
-
-const FORM_VAZIO = { nome: "", codigo: "", creditos: 4, preRequisitos: [] };
-
+import ModalConfirmacao from "../components/ModalConfirmacao";
+ 
+const normalizar = (texto) =>
+  texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+ 
+const FORM_VAZIO = { nome: "", creditos: 4, preRequisitos: [] };
+ 
 export default class Disciplinas extends React.Component {
-  state = { disciplinas: [], form: FORM_VAZIO, mensagem: null, idRemover: null };
-
+  state = { disciplinas: [], form: FORM_VAZIO, mensagem: null, confirmacao: null };
+ 
   componentDidMount() {
     this.carregar();
   }
@@ -27,28 +36,62 @@ export default class Disciplinas extends React.Component {
 
   salvar = async (e) => {
     e.preventDefault();
-    const { form } = this.state;
-    if (!form.nome.trim() || !form.codigo.trim())
-      return this.setState({ mensagem: { tipo: "warning", texto: "Preencha nome e código." } });
-    if (this.state.disciplinas.some((d) => d.codigo === form.codigo.trim()))
-      return this.setState({ mensagem: { tipo: "warning", texto: "Já existe uma disciplina com esse código." } });
+    const { form, disciplinas } = this.state;
+    const nome = form.nome.trim();
+    if (!nome)
+      return this.setState({ mensagem: { tipo: "warning", texto: "Preencha o nome da disciplina." } });
+    if (disciplinas.some((d) => normalizar(d.nome) === normalizar(nome)))
+      return this.setState({
+        mensagem: { tipo: "warning", texto: 'Já existe uma disciplina chamada "' + nome + '".' },
+      });
     try {
-      await api.criar("disciplinas", { ...form, creditos: Number(form.creditos) });
+      await api.criar("disciplinas", { ...form, nome, creditos: Number(form.creditos) });
       this.setState({ form: FORM_VAZIO, mensagem: { tipo: "success", texto: "Disciplina cadastrada!" } });
       this.carregar();
     } catch (err) {
       this.setState({ mensagem: { tipo: "danger", texto: err.message } });
     }
   };
+ 
+  pedirRemocao = async (disciplina) => {
+    try {
+      const [turmas, matriculas] = await Promise.all([
+        api.listar("turmas"),
+        api.listar("matriculas"),
+      ]);
+      const idsTurmas = turmas.filter((t) => t.disciplinaId === disciplina.id).map((t) => t.id);
+      const qtdMatriculas = matriculas.filter((m) => idsTurmas.includes(m.turmaId)).length;
+      const dependentes = this.state.disciplinas.filter((d) =>
+        d.preRequisitos.includes(disciplina.id)
+      ).length;
 
-  confirmarRemover = (id) => this.setState({ idRemover: id });
-  cancelarModal = () => this.setState({ idRemover: null });
+      const itens = [
+        idsTurmas.length + " turma(s) ofertada(s)",
+        qtdMatriculas + " matrícula(s) de alunos nessas turmas",
+      ];
+      if (dependentes > 0) itens.push("o pré-requisito de " + dependentes + " outra(s) disciplina(s)");
+
+      this.setState({
+        confirmacao: {
+          titulo: 'Remover a disciplina "' + disciplina.nome + '"?',
+          linhas: ["Isso também vai apagar:"],
+          itens,
+          aviso: "Esta ação não pode ser desfeita.",
+          textoConfirmar: "Sim, remover disciplina",
+          disciplina,
+        },
+      });
+    } catch (err) {
+      this.setState({ mensagem: { tipo: "danger", texto: err.message } });
+    }
+  };
 
   remover = async () => {
-    const { idRemover } = this.state;
-    this.setState({ idRemover: null });
+    const { disciplina } = this.state.confirmacao;
+    this.setState({ confirmacao: null });
     try {
-      await api.remover("disciplinas", idRemover);
+      await api.remover("disciplinas", disciplina.id);
+      this.setState({ mensagem: { tipo: "success", texto: "Disciplina removida." } });
       this.carregar();
     } catch (err) {
       this.setState({ mensagem: { tipo: "danger", texto: err.message } });
@@ -56,25 +99,16 @@ export default class Disciplinas extends React.Component {
   };
 
   render() {
-    const { disciplinas, form, mensagem, idRemover } = this.state;
+    const { disciplinas, form, mensagem, confirmacao } = this.state;
     return (
       <div className="row">
         <div className="col-md-5">
           <h2>Nova disciplina</h2>
           <Alerta mensagem={mensagem} />
           <form onSubmit={this.salvar}>
-            <div className="mb-2">
-              <label className="form-label">Nome</label>
-              <input className="form-control" name="nome" value={form.nome} onChange={this.mudar} />
-            </div>
-            <div className="mb-2">
-              <label className="form-label">Código</label>
-              <input className="form-control" name="codigo" value={form.codigo} onChange={this.mudar} />
-            </div>
-            <div className="mb-3">
-              <label className="form-label">Créditos</label>
-              <input className="form-control" name="creditos" type="number" value={form.creditos} onChange={this.mudar} />
-            </div>
+            <input className="form-control mb-2" name="nome" placeholder="Nome" value={form.nome} onChange={this.mudar} />
+            <label className="form-label" htmlFor="creditos">Créditos</label>
+            <input className="form-control mb-3" id="creditos" name="creditos" type="number" value={form.creditos} onChange={this.mudar} />
             <p className="mb-1">Pré-requisitos:</p>
             {disciplinas.map((d) => (
               <div className="form-check" key={d.id}>
@@ -108,7 +142,7 @@ export default class Disciplinas extends React.Component {
                       : d.preRequisitos.map((id) => disciplinas.find((x) => x.id === id)?.nome).join(", ")}
                   </td>
                   <td>
-                    <button className="btn btn-outline-danger btn-sm" onClick={() => this.confirmarRemover(d.id)}>
+                    <button className="btn btn-outline-danger btn-sm" onClick={() => this.pedirRemocao(d)}>
                       Remover
                     </button>
                   </td>
@@ -117,24 +151,12 @@ export default class Disciplinas extends React.Component {
             </tbody>
           </table>
         </div>
-
-        {idRemover && (
-          <div className="modal d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-            <div className="modal-dialog">
-              <div className="modal-content">
-                <div className="modal-header">
-                  <h5 className="modal-title">Confirmar remoção</h5>
-                </div>
-                <div className="modal-body">
-                  <p>Remover esta disciplina? As turmas e matrículas associadas também serão removidas.</p>
-                </div>
-                <div className="modal-footer">
-                  <button className="btn btn-secondary" onClick={this.cancelarModal}>Cancelar</button>
-                  <button className="btn btn-danger" onClick={this.remover}>Remover</button>
-                </div>
-              </div>
-            </div>
-          </div>
+        {confirmacao && (
+          <ModalConfirmacao
+            {...confirmacao}
+            onConfirmar={this.remover}
+            onCancelar={() => this.setState({ confirmacao: null })}
+          />
         )}
       </div>
     );

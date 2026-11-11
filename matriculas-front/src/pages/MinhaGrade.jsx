@@ -4,11 +4,12 @@ import { api } from "../services/api";
 import { decodificarHorario } from "../utils/horario";
 import GradeSemanal from "../components/GradeSemanal";
 import Alerta from "../components/Alerta";
-
+import ModalConfirmacao from "../components/ModalConfirmacao";
+ 
 export default class MinhaGrade extends React.Component {
   static contextType = AuthContext;
-  state = { matriculas: [], turmas: [], disciplinas: [], carregando: true, mensagem: null, idCancelar: null };
-
+  state = { matriculas: [], turmas: [], disciplinas: [], professores: [], carregando: true, mensagem: null, confirmacao: null };
+ 
   componentDidMount() {
     this.carregar();
   }
@@ -16,25 +17,38 @@ export default class MinhaGrade extends React.Component {
   carregar = async () => {
     try {
       const alunoId = this.context.usuario.alunoId;
-      const [matriculas, turmas, disciplinas] = await Promise.all([
+      const [matriculas, turmas, disciplinas, professores] = await Promise.all([
         api.listar("matriculas?alunoId=" + alunoId),
         api.listar("turmas"),
         api.listar("disciplinas"),
+        api.listar("professores"),
       ]);
-      this.setState({ matriculas, turmas, disciplinas, carregando: false });
+      this.setState({ matriculas, turmas, disciplinas, professores, carregando: false });
     } catch (e) {
       this.setState({ carregando: false, mensagem: { tipo: "danger", texto: e.message } });
     }
   };
-
-  confirmarCancelar = (id) => this.setState({ idCancelar: id });
-  fecharModal = () => this.setState({ idCancelar: null });
+ 
+  pedirCancelamento = (item) => {
+    this.setState({
+      confirmacao: {
+        titulo: 'Cancelar a matrícula em "' + item.disciplina + '"?',
+        linhas: [
+          decodificarHorario(item.horario).texto + " - " + item.professor + ".",
+          "Você perde a vaga e ela pode ser ocupada por outra pessoa.",
+        ],
+        textoConfirmar: "Sim, cancelar matrícula",
+        textoVoltar: "Manter matrícula",
+        matriculaId: item.matriculaId,
+      },
+    });
+  };
 
   cancelar = async () => {
-    const { idCancelar } = this.state;
-    this.setState({ idCancelar: null });
+    const { matriculaId } = this.state.confirmacao;
+    this.setState({ confirmacao: null });
     try {
-      await api.remover("matriculas", idCancelar);
+      await api.remover("matriculas", matriculaId);
       this.setState({ mensagem: { tipo: "success", texto: "Matrícula cancelada." } });
       this.carregar();
     } catch (e) {
@@ -43,16 +57,21 @@ export default class MinhaGrade extends React.Component {
   };
 
   itens() {
-    const { matriculas, turmas, disciplinas } = this.state;
+    const { matriculas, turmas, disciplinas, professores } = this.state;
     return matriculas
       .map((m) => {
         const turma = turmas.find((t) => t.id === m.turmaId);
         if (!turma) return null;
         const disciplina = disciplinas.find((d) => d.id === turma.disciplinaId);
+        const professor = professores.find((p) => p.id === turma.professorId);
+        const nomeDisciplina = disciplina ? disciplina.nome : "Disciplina";
+        const nomeProfessor = professor ? professor.nome : "professor não informado";
         return {
           matriculaId: m.id,
           horario: turma.horario,
-          texto: disciplina ? disciplina.nome : "Disciplina",
+          disciplina: nomeDisciplina,
+          professor: nomeProfessor,
+          texto: nomeDisciplina + " - " + nomeProfessor,
         };
       })
       .filter(Boolean)
@@ -64,7 +83,7 @@ export default class MinhaGrade extends React.Component {
   render() {
     if (this.state.carregando) return <div className="spinner-border" role="status" />;
     const itens = this.itens();
-    const { idCancelar } = this.state;
+    const { confirmacao } = this.state;
     return (
       <div>
         <h2>Minha grade</h2>
@@ -81,30 +100,18 @@ export default class MinhaGrade extends React.Component {
               <span>
                 {i.texto} ({decodificarHorario(i.horario).texto})
               </span>
-              <button className="btn btn-outline-danger btn-sm" onClick={() => this.confirmarCancelar(i.matriculaId)}>
+              <button className="btn btn-outline-danger btn-sm" onClick={() => this.pedirCancelamento(i)}>
                 Cancelar
               </button>
             </li>
           ))}
         </ul>
-
-        {idCancelar && (
-          <div className="modal d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-            <div className="modal-dialog">
-              <div className="modal-content">
-                <div className="modal-header">
-                  <h5 className="modal-title">Confirmar cancelamento</h5>
-                </div>
-                <div className="modal-body">
-                  <p>Cancelar esta matrícula?</p>
-                </div>
-                <div className="modal-footer">
-                  <button className="btn btn-secondary" onClick={this.fecharModal}>Voltar</button>
-                  <button className="btn btn-danger" onClick={this.cancelar}>Cancelar matrícula</button>
-                </div>
-              </div>
-            </div>
-          </div>
+        {confirmacao && (
+          <ModalConfirmacao
+            {...confirmacao}
+            onConfirmar={this.cancelar}
+            onCancelar={() => this.setState({ confirmacao: null })}
+          />
         )}
       </div>
     );

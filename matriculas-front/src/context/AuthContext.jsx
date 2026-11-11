@@ -1,4 +1,5 @@
 import React from "react";
+import { lerUsuario, salvarUsuario, limparSessao } from "../utils/sessao";
 export const AuthContext = React.createContext({
   usuario: null,
   login: () => {},
@@ -6,17 +7,17 @@ export const AuthContext = React.createContext({
 });
 
 export class AuthProvider extends React.Component {
-  state = { usuario: JSON.parse(localStorage.getItem("usuario")) };
-
+  state = { usuario: lerUsuario() };
+ 
   login = (usuario) => {
-    localStorage.setItem("usuario", JSON.stringify(usuario));
+    salvarUsuario(usuario);
     this.setState({ usuario });
   };
   logout = () => {
-    localStorage.removeItem("usuario");
+    limparSessao();
     this.setState({ usuario: null });
   };
-
+ 
   render() {
     const valor = { usuario: this.state.usuario, login: this.login, logout: this.logout };
     return <AuthContext.Provider value={valor}>{this.props.children}</AuthContext.Provider>;

@@ -1,7 +1,7 @@
 import React from "react";
 import { AuthContext } from "../context/AuthContext";
 import { api } from "../services/api";
-import { validarMatricula } from "../utils/regras";
+import { validarMatricula, MSG_SEM_VAGAS } from "../utils/regras";
 import { decodificarHorario } from "../utils/horario";
 import Alerta from "../components/Alerta";
 
@@ -16,6 +16,7 @@ export default class TurmasDisponiveis extends React.Component {
     disciplinas: [],
     minhasMatriculas: [],
     todasMatriculas: [],
+    professores: [],
     aluno: null,
     carregando: true,
     mensagem: null,
@@ -40,20 +41,21 @@ export default class TurmasDisponiveis extends React.Component {
   carregar = async (silencioso = false) => {
     try {
       const alunoId = this.context.usuario.alunoId;
-      const [turmas, disciplinas, minhasMatriculas, todasMatriculas, alunos] =
+      const [turmas, disciplinas, minhasMatriculas, todasMatriculas, alunos, professores] =
         await Promise.all([
           api.listar("turmas"),
           api.listar("disciplinas"),
           api.listar("matriculas?alunoId=" + alunoId),
           api.listar("matriculas"),
           api.listar("alunos"),
+          api.listar("professores"),
         ]);
       const aluno = alunos.find((a) => a.id === alunoId);
 
       const anteriores = this.state.disciplinas;
       const removidas = anteriores.filter((antiga) => !disciplinas.some((d) => d.id === antiga.id));
 
-      this.setState({ turmas, disciplinas, minhasMatriculas, todasMatriculas, aluno, carregando: false });
+      this.setState({ turmas, disciplinas, minhasMatriculas, todasMatriculas, professores, aluno, carregando: false });
 
       if (removidas.length > 0) {
         const nomes = removidas.map((d) => d.nome).join(", ");
@@ -89,12 +91,15 @@ export default class TurmasDisponiveis extends React.Component {
   };
 
   render() {
-    const { turmas, disciplinas, minhasMatriculas, todasMatriculas, carregando, mensagem } = this.state;
+    const { turmas, disciplinas, minhasMatriculas, todasMatriculas, professores, aluno, carregando, mensagem } = this.state;
     if (carregando) return <div className="spinner-border" role="status" />;
 
     const turmasValidas = turmas
       .filter((t) => disciplinas.some((d) => d.id === t.disciplinaId))
       .sort((a, b) => Number(a.horario) - Number(b.horario));
+    const turmasDoAluno = minhasMatriculas
+      .map((m) => turmas.find((t) => t.id === m.turmaId))
+      .filter(Boolean);
 
     return (
       <div>
@@ -106,22 +111,60 @@ export default class TurmasDisponiveis extends React.Component {
             const disciplina = disciplinas.find((d) => d.id === turma.disciplinaId);
             const ocupadas = todasMatriculas.filter((m) => m.turmaId === turma.id).length;
             const jaMatriculado = minhasMatriculas.some((m) => m.turmaId === turma.id);
+            const lotada = ocupadas >= turma.vagas;
+            const professor = professores.find((p) => p.id === turma.professorId);
+            // Mesma regra usada ao clicar: o motivo aparece antes, em vez de só depois do clique.
+            const motivo =
+              jaMatriculado || !aluno
+                ? null
+                : validarMatricula({ aluno, turma, disciplina, disciplinas, turmasDoAluno, ocupadas });
+            const bloqueada = Boolean(motivo) && motivo !== MSG_SEM_VAGAS;
+            // Informativo: mostra cada pré-requisito e se o aluno já o concluiu.
+            const preRequisitos = (disciplina.preRequisitos || []).map((id) => {
+              const pre = disciplinas.find((d) => d.id === id);
+              const concluida = Boolean(aluno) && aluno.disciplinasConcluidas.includes(id);
+              return { id, nome: pre ? pre.nome : "Disciplina removida", concluida };
+            });
             return (
               <div className="col-md-4 mb-3" key={turma.id}>
                 <div className="card">
                   <div className="card-body">
-                    <h5 className="card-title">{disciplina.nome}</h5>
+                    <h5 className="card-title">
+                      {disciplina.nome}
+                      {lotada && <span className="badge text-bg-danger ms-2">Lotada</span>}
+                    </h5>
                     <p className="card-text">
                       {decodificarHorario(turma.horario).texto}
                       <br />
+                      Professor: {professor ? professor.nome : "não informado"}
+                      <br />
                       Vagas ocupadas: {ocupadas}/{turma.vagas}
                     </p>
+                    {preRequisitos.length > 0 && (
+                      <p className="small mb-2">
+                        Pré-requisitos:{" "}
+                        {preRequisitos.map((pre, i) => (
+                          <span key={pre.id}>
+                            {i > 0 && ", "}
+                            {pre.nome}{" "}
+                            <span className={pre.concluida ? "text-success" : "text-danger"}>
+                              ({pre.concluida ? "concluída" : "pendente"})
+                            </span>
+                          </span>
+                        ))}
+                      </p>
+                    )}
+                    {bloqueada && (
+                      <p className="small text-danger-emphasis" role="note">
+                        {motivo}
+                      </p>
+                    )}
                     <button
                       className="btn btn-primary"
-                      disabled={jaMatriculado}
+                      disabled={jaMatriculado || lotada || bloqueada}
                       onClick={() => this.matricular(turma)}
                     >
-                      {jaMatriculado ? "Matriculado" : "Matricular"}
+                      {jaMatriculado ? "Matriculado" : lotada ? "Turma lotada" : bloqueada ? "Não disponível" : "Matricular"}
                     </button>
                   </div>
                 </div>

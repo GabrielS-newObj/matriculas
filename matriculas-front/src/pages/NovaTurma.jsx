@@ -1,6 +1,6 @@
 import React from "react";
 import { api } from "../services/api";
-import { validarOferta } from "../utils/regras";
+import { validarOferta, validarVagas } from "../utils/regras";
 import { horarioValido, DIAS, TURNOS } from "../utils/horario";
 import Alerta from "../components/Alerta";
 
@@ -38,8 +38,9 @@ export default class NovaTurma extends React.Component {
       return aviso("Selecione o dia e o turno.");
     const professor = professores.find((p) => p.id === Number(form.professorId));
     if (!professor || !form.disciplinaId) return aviso("Escolha a disciplina e o professor.");
-    if (Number(form.vagas) < 1) return aviso("Informe ao menos 1 vaga.");
-
+    const erroVagas = validarVagas(form.vagas);
+    if (erroVagas) return aviso(erroVagas);
+ 
     const erro = validarOferta({
       professor,
       turmasDoProfessor: turmas.filter((t) => t.professorId === professor.id),
@@ -68,7 +69,7 @@ export default class NovaTurma extends React.Component {
         <div className="col-md-6">
           <h2>Ofertar turma</h2>
           <Alerta mensagem={mensagem} />
-          <form onSubmit={this.salvar}>
+          <form onSubmit={this.salvar} noValidate>
             <div className="mb-3">
               <label className="form-label">Disciplina</label>
               <select className="form-select" name="disciplinaId" value={form.disciplinaId} onChange={this.mudar}>
@@ -111,8 +112,8 @@ export default class NovaTurma extends React.Component {
               </select>
             </div>
             <div className="mb-3">
-              <label className="form-label">Vagas</label>
-              <input className="form-control" name="vagas" type="number" value={form.vagas} onChange={this.mudar} />
+              <label className="form-label">Vagas (número inteiro, mínimo 1)</label>
+              <input className="form-control" name="vagas" type="number" min="1" step="1" value={form.vagas} onChange={this.mudar} />
             </div>
             <button className="btn btn-primary">Ofertar turma</button>
           </form>
