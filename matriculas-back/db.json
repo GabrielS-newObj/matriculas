@@ -104,6 +104,13 @@
       "horario": "21",
       "vagas": 30,
       "id": 3
+    },
+    {
+      "disciplinaId": 2,
+      "professorId": 2,
+      "horario": "42",
+      "vagas": 30,
+      "id": 4
     }
   ],
   "matriculas": [
