@@ -98,8 +98,8 @@ export default class MinhaGrade extends React.Component {
           {itens.map((i) => (
             <li className="list-group-item d-flex justify-content-between" key={i.matriculaId}>
               <span>
-                {i.texto} ({decodificarHorario(i.horario).texto})
-              </span>
+                  {i.texto} - {decodificarHorario(i.horario).texto}
+              </span> 
               <button className="btn btn-outline-danger btn-sm" onClick={() => this.pedirCancelamento(i)}>
                 Cancelar
               </button>

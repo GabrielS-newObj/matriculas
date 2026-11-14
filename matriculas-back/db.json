@@ -76,6 +76,13 @@
         2
       ],
       "id": 4
+    },
+    {
+      "nome": "front end",
+      "creditos": 1,
+      "preRequisitos": [],
+      "codigo": "DISC-001",
+      "id": 5
     }
   ],
   "professores": [
@@ -111,6 +118,27 @@
       "horario": "42",
       "vagas": 30,
       "id": 4
+    },
+    {
+      "disciplinaId": 2,
+      "professorId": 1,
+      "horario": "32",
+      "vagas": 55,
+      "id": 5
+    },
+    {
+      "disciplinaId": 5,
+      "professorId": 1,
+      "horario": "22",
+      "vagas": 30,
+      "id": 6
+    },
+    {
+      "disciplinaId": 5,
+      "professorId": 2,
+      "horario": "23",
+      "vagas": 233,
+      "id": 7
     }
   ],
   "matriculas": [
@@ -123,6 +151,11 @@
       "alunoId": 1,
       "turmaId": 1,
       "id": 2
+    },
+    {
+      "alunoId": 1,
+      "turmaId": 6,
+      "id": 3
     }
   ]
 }

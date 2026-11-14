@@ -98,7 +98,7 @@ export default class NovaTurma extends React.Component {
               <select className="form-select" name="dia" value={form.dia} onChange={this.mudar}>
                 <option value="">Selecione...</option>
                 {Object.entries(DIAS).map(([valor, nome]) => (
-                  <option key={valor} value={valor}>{nome}</option>
+                  <option key={valor} value={valor}>{nome} ({valor})</option>
                 ))}
               </select>
             </div>
@@ -107,7 +107,7 @@ export default class NovaTurma extends React.Component {
               <select className="form-select" name="turno" value={form.turno} onChange={this.mudar}>
                 <option value="">Selecione...</option>
                 {Object.entries(TURNOS).map(([valor, nome]) => (
-                  <option key={valor} value={valor}>{nome}</option>
+                  <option key={valor} value={valor}>{nome} ({valor})</option>
                 ))}
               </select>
             </div>

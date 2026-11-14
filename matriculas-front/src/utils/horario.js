@@ -9,5 +9,10 @@ export function horarioValido(codigo) {
  
 export function decodificarHorario(codigo) {
   const texto = String(codigo);
-  return { dia: DIAS[texto[0]], turno: TURNOS[texto[1]], texto: DIAS[texto[0]] + " - " + TURNOS[texto[1]] };
+  return {
+    dia: DIAS[texto[0]],
+    turno: TURNOS[texto[1]],
+    codigo: texto,
+    texto: DIAS[texto[0]] + " - " + TURNOS[texto[1]] + " (" + texto + ")",
+  };
 }
