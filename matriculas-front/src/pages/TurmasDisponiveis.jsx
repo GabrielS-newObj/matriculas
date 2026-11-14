@@ -113,13 +113,11 @@ export default class TurmasDisponiveis extends React.Component {
             const jaMatriculado = minhasMatriculas.some((m) => m.turmaId === turma.id);
             const lotada = ocupadas >= turma.vagas;
             const professor = professores.find((p) => p.id === turma.professorId);
-            // Mesma regra usada ao clicar: o motivo aparece antes, em vez de só depois do clique.
             const motivo =
               jaMatriculado || !aluno
                 ? null
                 : validarMatricula({ aluno, turma, disciplina, disciplinas, turmasDoAluno, ocupadas });
             const bloqueada = Boolean(motivo) && motivo !== MSG_SEM_VAGAS;
-            // Informativo: mostra cada pré-requisito e se o aluno já o concluiu.
             const preRequisitos = (disciplina.preRequisitos || []).map((id) => {
               const pre = disciplinas.find((d) => d.id === id);
               const concluida = Boolean(aluno) && aluno.disciplinasConcluidas.includes(id);

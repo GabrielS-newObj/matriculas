@@ -1,7 +1,6 @@
 export const VAGAS_MINIMAS = 1;
 export const MSG_SEM_VAGAS = "Turma sem vagas.";
  
-// Sem limite máximo (ex.: ensino EAD): vagas = número inteiro, de 1 para cima.
 export function validarVagas(valor) {
   const numero = Number(valor);
   const vazio = valor === "" || valor === null || valor === undefined;

@@ -1,7 +1,6 @@
 const CHAVE_USUARIO = "matriculas.usuario";
 const CHAVE_PAGINA = "matriculas.pagina";
  
-// localStorage pode falhar (modo privado, armazenamento bloqueado): nunca quebrar o sistema por isso.
 function ler(chave) {
   try {
     return window.localStorage.getItem(chave);

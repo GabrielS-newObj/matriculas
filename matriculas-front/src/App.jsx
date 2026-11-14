@@ -18,7 +18,6 @@ const PAGINAS = {
   "gestor-disciplinas": { componente: Disciplinas, perfil: "gestor" },
 };
  
-// Ao carregar (ou apertar F5): volta para a tela em que a pessoa estava, se ainda for permitida.
 function paginaInicial() {
   const usuario = lerUsuario();
   if (!usuario) return "login";

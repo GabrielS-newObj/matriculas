@@ -1,7 +1,5 @@
 import React from "react";
- 
-// Modal de confirmação padrão do sistema: TODA ação de remover ou cancelar passa por aqui.
-// Acessível: role="dialog", foco no botão seguro (Voltar), Esc e clique fora também voltam.
+
 export default class ModalConfirmacao extends React.Component {
   componentDidMount() {
     document.addEventListener("keydown", this.aoTeclar);

@@ -159,8 +159,6 @@ const server = http.createServer(async (req, res) => {
           db.disciplinas.forEach((d) => {
           d.preRequisitos = d.preRequisitos.filter((p) => p !== id);
         });
-          // Sem isso, o id removido ficaria "concluído" nos alunos e, se um novo id igual
-          // fosse criado, o aluno passaria por pré-requisitos que nunca cumpriu.
           db.alunos.forEach((a) => {
             a.disciplinasConcluidas = a.disciplinasConcluidas.filter((c) => c !== id);
           });
